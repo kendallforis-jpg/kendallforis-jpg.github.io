@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Birthday Booty — Roommate Calendar</title>
+<style>
+  :root {
+    --ink: #18252b;
+    --paper: #fff4d6;
+    --wood: #5c321f;
+    --gold: #f4bd4f;
+    --sea: #1b6570;
+    --red: #b84d3d;
+    --green: #4f7b54;
+    --blue: #4f78a8;
+    --purple: #8862a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.12), transparent 38%),
+      linear-gradient(160deg, #164e5a 0%, #0d3544 65%, #082631 100%);
+    padding: 24px 14px 40px;
+  }
+  .ship { max-width: 1040px; margin: 0 auto; }
+  header {
+    text-align: center; color: #fff1c6; padding: 8px 10px 22px;
+  }
+  .flag { font-size: 2.3rem; line-height: 1.2; }
+  h1 { margin: 5px 0 6px; font-size: clamp(2rem, 6vw, 3.6rem); letter-spacing: 1px; text-shadow: 3px 3px 0 #512b1a; }
+  header p { margin: 0; color: #d9e9df; font-size: 1.05rem; }
+  .wood-panel {
+    background: linear-gradient(135deg, #8a5634, #623820);
+    border: 5px solid #3d2418; border-radius: 18px; padding: 10px;
+    box-shadow: 0 12px 0 rgba(0,0,0,.16), 0 22px 45px rgba(0,0,0,.22);
+  }
+  .parchment {
+    background: var(--paper); border: 2px solid #d9b66a; border-radius: 10px;
+    padding: clamp(14px, 3vw, 26px);
+  }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .month-title { font-size: clamp(1.5rem, 4vw, 2.1rem); margin: 0; color: #472918; }
+  button, input, select { font: inherit; }
+  button {
+    cursor: pointer; border: 2px solid #442818; border-radius: 8px;
+    background: var(--gold); color: #392416; padding: 9px 13px; font-weight: bold;
+    box-shadow: 0 3px 0 #442818; transition: transform .08s, box-shadow .08s;
+  }
+  button:hover { filter: brightness(1.04); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 #442818; }
+  .nav { display: flex; gap: 8px; }
+  .main-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(240px, .8fr); gap: 22px; align-items: start; }
+  .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+  .weekday { text-align: center; font-weight: bold; padding: 7px 0; color: #6c3c22; }
+  .day {
+    min-height: 90px; background: #fffaf0; border: 1px solid #dec98f; border-radius: 7px;
+    padding: 6px; position: relative; overflow-wrap: anywhere;
+  }
+  .day.empty { background: rgba(110,74,35,.06); border-style: dashed; }
+  .day.today { outline: 3px solid var(--sea); outline-offset: -3px; }
+  .day-num { font-size: .9rem; font-weight: bold; color: #573a26; }
+  .today .day-num::after { content: " • TODAY"; color: var(--sea); font-size: .58rem; }
+  .event {
+    display: block; width: 100%; margin-top: 5px; border: 0; border-radius: 4px;
+    padding: 4px 5px; box-shadow: none; color: white; text-align: left;
+    font-family: Arial, sans-serif; font-size: .72rem; line-height: 1.25;
+    font-weight: bold; cursor: default;
+  }
+  .event small { display: block; font-size: .65rem; font-weight: normal; opacity: .95; }
+  .side-card { border: 2px solid #d9b66a; border-radius: 9px; padding: 15px; background: #fff9e9; margin-bottom: 15px; }
+  h2 { margin: 0 0 12px; font-size: 1.35rem; color: #472918; }
+  .field { margin-bottom: 11px; }
+  label { display: block; font-size: .9rem; font-weight: bold; margin-bottom: 5px; }
+  input, select { width: 100%; padding: 10px; border: 1px solid #b99c61; border-radius: 6px; background: white; color: var(--ink); }
+  .add-btn { width: 100%; background: #e9b54b; }
+  .hint { font: .83rem/1.45 Arial, sans-serif; color: #6c5840; margin: 10px 0 0; }
+  .legend-list, .upcoming-list { display: grid; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font: .9rem Arial, sans-serif; }
+  .swatch { width: 13px; height: 13px; border-radius: 4px; flex: 0 0 13px; }
+  .upcoming-item { border-left: 5px solid var(--accent); padding: 4px 0 4px 9px; font: .88rem/1.4 Arial, sans-serif; }
+  .upcoming-item strong { display: block; }
+  .delete { border: 0; box-shadow: none; background: transparent; color: #8c382a; padding: 0 4px; font-size: .8rem; float: right; }
+  .empty-note { font: .9rem Arial, sans-serif; color: #79684f; }
+  footer { color: #cce0dc; text-align: center; margin-top: 20px; font: .85rem Arial, sans-serif; }
+  .toast { margin-top: 10px; min-height: 1.2em; color: #28633d; font: .85rem Arial, sans-serif; }
+  @media (max-width: 760px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .day { min-height: 75px; padding: 4px; }
+    .event { font-size: .65rem; padding: 3px; }
+    .event small { font-size: .58rem; }
+    .today .day-num::after { content: " •"; font-size: .65rem; }
+  }
+  @media (max-width: 420px) {
+    body { padding: 12px 7px 24px; }
+    .parchment { padding: 10px; }
+    .calendar { gap: 3px; }
+    .day { min-height: 62px; }
+    .weekday { font-size: .75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="ship">
+  <header>
+    <div class="flag" aria-hidden="true">🏴‍☠️ ⚓ 🦜</div>
+    <h1>Birthday Booty</h1>
+    <p>Keep the crew’s birthdays aboard ship!</p>
+  </header>
+
+  <div class="wood-panel">
+    <main class="parchment">
+      <div class="topbar">
+        <h2 class="month-title" id="monthTitle">October 2026</h2>
+        <div class="nav">
+          <button id="prevMonth" aria-label="Previous month">← Prev</button>
+          <button id="thisMonth">Today</button>
+          <button id="nextMonth" aria-label="Next month">Next →</button>
+        </div>
+      </div>
+
+      <div class="main-layout">
+        <section aria-label="Birthday calendar">
+          <div class="calendar" id="calendar"></div>
+        </section>
+
+        <aside>
+          <section class="side-card">
+            <h2>📜 Add a Crew Birthday</h2>
+            <form id="birthdayForm">
+              <div class="field">
+                <label for="personName">Roommate’s name</label>
+                <input id="personName" name="personName" placeholder="e.g. Alex" maxlength="40" required>
+              </div>
+              <div class="field">
+                <label for="birthday">Birthday</label>
+                <input id="birthday" name="birthday" type="date" required>
+              </div>
+              <div class="field">
+                <label for="crewColor">Crew color</label>
+                <select id="crewColor" name="crewColor">
+                  <option value="#b84d3d">Cannon red</option>
+                  <option value="#1b6570">Ocean teal</option>
+                  <option value="#4f7b54">Seaweed green</option>
+                  <option value="#4f78a8">Storm blue</option>
+                  <option value="#8862a8">Royal purple</option>
+                  <option value="#b77b20">Treasure gold</option>
+                </select>
+              </div>
+              <button class="add-btn" type="submit">＋ Add to the Logbook</button>
+              <div class="toast" id="toast" role="status" aria-live="polite"></div>
+            </form>
+            <p class="hint">Birthdays are saved in this browser on this device. Use the same color for each roommate to spot their day at a glance.</p>
+          </section>
+
+          <section class="side-card">
+            <h2>🎨 Crew Colors</h2>
+            <div id="legend" class="legend-list"><p class="empty-note">Add a birthday to start your crew legend.</p></div>
+          </section>
+
+          <section class="side-card">
+            <h2>🗺️ Next Birthdays</h2>
+            <div id="upcoming" class="upcoming-list"><p class="empty-note">No birthdays in the logbook yet.</p></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <footer>Made for the crew • No server, no account, just birthday booty ⚓</footer>
+</div>
+
+<script>
+(() => {
+  const COLORS = {
+    "#b84d3d": "Cannon red", "#1b6570": "Ocean teal",
+    "#4f7b54": "Seaweed green", "#4f78a8": "Storm blue",
+    "#8862a8": "Royal purple", "#b77b20": "Treasure gold"
+  };
+  const STORAGE_KEY = "birthday-booty-v1";
+  const calendarEl = document.getElementById("calendar");
+  const monthTitle = document.getElementById("monthTitle");
+  const form = document.getElementById("birthdayForm");
+  const toast = document.getElementById("toast");
+  let shownMonth = new Date();
+  shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth(), 1);
+  let birthdays = loadBirthdays();
+
+  function loadBirthdays() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(saved) ? saved.filter(x => x && x.id && x.name && x.date && x.color) : [];
+    } catch { return []; }
+  }
+  function saveBirthdays() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(birthdays)); }
+    catch { toast.textContent = "Could not save in this browser. Your changes may not persist."; }
+  }
+  function dateParts(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return { year: y, month: m - 1, day: d };
+  }
+  function monthDayMatches(iso, year, month, day) {
+    const p = dateParts(iso);
+    return p.month === month && p.day === day;
+  }
+  function birthdayAgeLabel(b, year) {
+    const p = dateParts(b.date);
+    return `Turns ${year - p.year}`;
+  }
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[ch]);
+  }
+  function renderCalendar() {
+    const year = shownMonth.getFullYear();
+    const month = shownMonth.getMonth();
+    monthTitle.textContent = shownMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    calendarEl.innerHTML = "";
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(day => {
+      const el = document.createElement("div");
+      el.className = "weekday";
+      el.textContent = day;
+      calendarEl.appendChild(el);
+    });
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let i = 0; i < firstWeekday; i++) {
+      const empty = document.createElement("div");
+      empty.className = "day empty";
+      empty.setAttribute("aria-hidden", "true");
+      calendarEl.appendChild(empty);
+    }
+    const now = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const cell = document.createElement("div");
+      cell.className = "day";
+      if (year === now.getFullYear() && month === now.getMonth() && day === now.getDate()) cell.classList.add("today");
+      const number = document.createElement("div");
+      number.className = "day-num";
+      number.textContent = day;
+      cell.appendChild(number);
+      birthdays.filter(b => monthDayMatches(b.date, year, month, day)).forEach(b => {
+        const event = document.createElement("div");
+        event.className = "event";
+        event.style.background = b.color;
+        event.title = `${b.name}'s birthday — click Remove in Next Birthdays to delete`;
+        const p = dateParts(b.date);
+        event.innerHTML = `${escapeHtml(b.name)}<small>${p.year < year ? escapeHtml(birthdayAgeLabel(b, year)) : "Birthday!"}</small>`;
+        cell.appendChild(event);
+      });
+      calendarEl.appendChild(cell);
+    }
+  }
+  function renderLegend() {
+    const legend = document.getElementById("legend");
+    const unique = [];
+    birthdays.forEach(b => {
+      if (!unique.some(item => item.name.toLowerCase() === b.name.toLowerCase() && item.color === b.color)) {
+        unique.push({ name: b.name, color: b.color });
+      }
+    });
+    legend.innerHTML = "";
+    if (!unique.length) {
+      legend.innerHTML = '<p class="empty-note">Add a birthday to start your crew legend.</p>';
+      return;
+    }
+    unique.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "legend-item";
+      row.innerHTML = `<span class="swatch" style="background:${item.color}"></span><span>${escapeHtml(item.name)}</span><span style="color:#806c4e;font-size:.8rem">(${COLORS[item.color] || "Crew color"})</span>`;
+      legend.appendChild(row);
+    });
+  }
+  function nextOccurrence(b) {
+    const p = dateParts(b.date);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let next = new Date(today.getFullYear(), p.month, p.day);
+    if (next < today) next = new Date(today.getFullYear() + 1, p.month, p.day);
+    return next;
+  }
+  function renderUpcoming() {
+    const upcoming = document.getElementById("upcoming");
+    upcoming.innerHTML = "";
+    const sorted = birthdays.map(b => ({ ...b, next: nextOccurrence(b) }))
+      .sort((a, b) => a.next - b.next || a.name.localeCompare(b.name)).slice(0, 6);
+    if (!sorted.length) {
+      upcoming.innerHTML = '<p class="empty-note">No birthdays in the logbook yet.</p>';
+      return;
+    }
+    sorted.forEach(b => {
+      const item = document.createElement("div");
+      item.className = "upcoming-item";
+      item.style.setProperty("--accent", b.color);
+      const dateText = b.next.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      item.innerHTML = `<button type="button" class="delete" aria-label="Remove ${escapeHtml(b.name)} birthday">Remove ×</button><strong>${escapeHtml(b.name)}</strong><span>${dateText}</span>`;
+      item.querySelector("button").addEventListener("click", () => {
+        if (confirm(`Remove ${b.name}'s birthday from the logbook?`)) {
+          birthdays = birthdays.filter(item => item.id !== b.id);
+          saveBirthdays(); renderAll(); toast.textContent = "Birthday removed from the logbook.";
+        }
+      });
+      upcoming.appendChild(item);
+    });
+  }
+  function renderAll() { renderCalendar(); renderLegend(); renderUpcoming(); }
+  document.getElementById("prevMonth").addEventListener("click", () => {
+    shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() - 1, 1); renderCalendar();
+  });
+  document.getElementById("nextMonth").addEventListener("click", () => {
+    shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() + 1, 1); renderCalendar();
+  });
+  document.getElementById("thisMonth").addEventListener("click", () => {
+    const now = new Date(); shownMonth = new Date(now.getFullYear(), now.getMonth(), 1); renderCalendar();
+  });
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const name = document.getElementById("personName").value.trim();
+    const date = document.getElementById("birthday").value;
+    const color = document.getElementById("crewColor").value;
+    if (!name || !date) return;
+    const [year, month, day] = date.split("-").map(Number);
+    const validDate = new Date(year, month - 1, day);
+    if (validDate.getFullYear() !== year || validDate.getMonth() !== month - 1 || validDate.getDate() !== day) {
+      toast.textContent = "Please choose a valid date."; return;
+    }
+    birthdays.push({ id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)), name, date, color });
+    saveBirthdays();
+    shownMonth = new Date(year, month - 1, 1);
+    form.reset();
+    renderAll();
+    toast.textContent = `${name}'s birthday has been added to the logbook!`;
+  });
+  renderAll();
+})();
+</script>
+</body>
+</html>
